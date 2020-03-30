@@ -39,14 +39,17 @@ class MyGame(arcade.Window):
         #Draws all entities
         for entity in reversed(self.entities):
                 try:
+                    print("Drawing {}".format(entity))
                     entity.draw(self.player)
                 except Exception as e:
                     print(e)
+                    import os
+                    os.system("pause")
 
         #Draws informative text
-        arcade.draw_text("Vessel Location:\nX: {:.2f}\nY: {:.2f}\nHeading: {}\nSpeed: {}"
+        arcade.draw_text("Vessel Location:\nX: {:.2f}\nY: {:.2f}\nHeading: {}\nSpeed: {:.2f}\nSetting: {}"
                 .format(self.player.position[0] // 10, self.player.position[1] // 10,
-                    self.player.heading, self.player.get_pretty_speed()),
+                    self.player.heading, self.player.speed, self.player.get_pretty_speed()),
                 10 , self.height - 70, arcade.color.WHITE, 12)
 
         if self.player.torpedo_time <= 0:
@@ -67,7 +70,6 @@ class MyGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-
         # Rotate left/right
         if key == arcade.key.LEFT:
             self.player.change_angle = -1 * ANGLE_SPEED
@@ -76,9 +78,9 @@ class MyGame(arcade.Window):
         elif key == arcade.key.SPACE:
             self.player.ping_time = 1
         elif key == arcade.key.UP:
-            self.player.speed = self.player.speed + 10 if self.player.speed < 30 else 30
+            self.player.thrust = self.player.thrust + 1 if self.player.thrust < 3 else 3
         elif key == arcade.key.DOWN:
-            self.player.speed = self.player.speed - 10 if self.player.speed > -10 else -10
+            self.player.thrust = self.player.thrust - 1 if self.player.thrust > -1 else -1
         elif key == arcade.key.ENTER:
             self.player.fire_torpedo(self.entities)
     def on_key_release(self, key, modifiers):

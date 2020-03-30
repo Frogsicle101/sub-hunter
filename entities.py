@@ -11,16 +11,26 @@ import copy
 from utilities import calculate_distance
 
 class Entity:
-        def __init__(self, position, speed, heading, is_explosive=True):
+        def __init__(self, position=[0, 0], speed=0, acceleration=0, thrust=0, heading=360, is_explosive=True):
             self.position = position
             self.speed = speed
+            self.acceleration = acceleration
             self.heading = heading
             self.is_explosive = is_explosive
+            self.thrust = thrust
+
             self.exploded = False
             self.boom_sound = arcade.load_sound("explode.wav")
+            self.drag_coefficent = 0.01
+
         def update(self, delta_time, entities):
-            self.position[0] = self.position[0] + self.speed * maths.sin(maths.radians(self.heading)) * delta_time
-            self.position[1] = self.position[1] + self.speed * maths.cos(maths.radians(self.heading)) * delta_time
+
+            self.acceleration = (self.thrust / 10) - self.speed * self.drag_coefficent
+
+            self.speed += self.acceleration
+
+            self.position[0] += self.speed * maths.sin(maths.radians(self.heading)) * delta_time
+            self.position[1] += self.speed * maths.cos(maths.radians(self.heading)) * delta_time
 
             for entity in entities:
                 if entity is not self and entity.is_explosive and self.is_explosive and not self.exploded and not entity.exploded and calculate_distance(tuple(self.position), tuple(entity.position)) < 20:
@@ -49,7 +59,7 @@ class Sub(Entity):
             self.heading += self.change_angle + 360
         else:
             self.heading += self.change_angle
-        self.sprite.angle = - 1 * self.heading
+        self.sprite.angle = -1 * self.heading
 
         if self.torpedo_time > 0:
             self.torpedo_time -= delta_time
@@ -72,11 +82,10 @@ class Enemy(Sub):
         super().__init__(position, speed, heading)
         self.sprite = arcade.Sprite("bad_sub.png", 0.1)
         self.pinged = False
-        self.offset_x = random.randint(self.speed - 40, 40-self.speed) * 3
-        self.offset_y = random.randint(self.speed - 40, 40-self.speed) * 3
+        self.offset_x = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
+        self.offset_y = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
 
     def draw(self, player):
-
         range = calculate_distance(tuple(self.position), tuple(player.position))
         screen_coords = player.game_coords_to_screen(tuple(self.position))
 
@@ -86,14 +95,14 @@ class Enemy(Sub):
                 if not self.pinged:
                     arcade.play_sound(self.ping_sound)
                     self.pinged = True
-                    self.offset_x = random.randint(self.speed - 40, 40-self.speed) * 3
-                    self.offset_y = random.randint(self.speed - 40, 40-self.speed) * 3
+                    self.offset_x = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
+                    self.offset_y = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
 
                 self.sprite.center_x, self.sprite.center_y = screen_coords
                 self.sprite.draw()
             else:
                 x, y = screen_coords
-                arcade.draw_circle_filled(x + self.offset_x, y + self.offset_y, (40 - self.speed) * 6, (255, 255, 255, self.speed * 255 // 40 + 1), (41 - self.speed))
+                arcade.draw_circle_filled(x + self.offset_x, y + self.offset_y, (40 - int(self.speed)) * 6, (255, 255, 255, int(self.speed )* 255 // 40 + 1), (41 - int(self.speed)))
     def update(self, delta_time, entities):
         super().update(delta_time, entities)
         angle = 180 + maths.degrees(maths.atan2(self.position[0] - entities[0].position[0], self.position[1] - entities[0].position[1]))
@@ -107,15 +116,15 @@ class Player(Sub):
         self.sprite.center_x, self.sprite.center_y = centre_pos
         self.ping_time = 0
     def get_pretty_speed(self):
-        if self.speed == -10:
+        if self.thrust == -1:
             return "Astern Slow"
-        elif self.speed == 0:
+        elif self.thrust == 0:
             return "All Stop"
-        elif self.speed == 10:
+        elif self.thrust == 1:
             return "Ahead Slow"
-        elif self.speed == 20:
+        elif self.thrust == 2:
             return "Ahead Standard"
-        elif self.speed == 30:
+        elif self.thrust == 3:
             return "Ahead Flank"
         else:
             return "ERROR"
