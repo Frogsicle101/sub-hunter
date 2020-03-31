@@ -39,7 +39,6 @@ class MyGame(arcade.Window):
         #Draws all entities
         for entity in reversed(self.entities):
                 try:
-                    print("Drawing {}".format(entity))
                     entity.draw(self.player)
                 except Exception as e:
                     print(e)
