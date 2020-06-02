@@ -6,12 +6,12 @@ This file contains code for all entities in the submarine game
 import arcade
 import random
 import math as maths
-import copy
+from copy import copy
 
 from utilities import calculate_distance
 
 class Entity:
-        def __init__(self, position=[0, 0], speed=0, acceleration=0, thrust=0, heading=360, is_explosive=True):
+        def __init__(self, position=[0, 0], speed=0, heading=360, acceleration=0, thrust=0, is_explosive=True):
             self.position = position
             self.speed = speed
             self.acceleration = acceleration
@@ -33,7 +33,12 @@ class Entity:
             self.position[1] += self.speed * maths.cos(maths.radians(self.heading)) * delta_time
 
             for entity in entities:
-                if entity is not self and entity.is_explosive and self.is_explosive and not self.exploded and not entity.exploded and calculate_distance(tuple(self.position), tuple(entity.position)) < 20:
+
+                both_explosive = entity.is_explosive and self.is_explosive
+                both_not_exploded = not self.exploded and not entity.exploded
+                close_enough = calculate_distance(tuple(self.position), tuple(entity.position)) < 20
+                if entity is not self and both_explosive and both_not_exploded and close_enough:
+
                     try: entity.explode(entities)
                     except ValueError: pass
                     try: self.explode(entities)
@@ -74,7 +79,7 @@ class Sub(Entity):
     def fire_torpedo(self, entities):
         if self.torpedo_time == 0:
             self.torpedo_time = 5
-            entities.append(Torpedo(copy.copy(self.position), copy.copy(self.speed) + 40, copy.copy(self.heading)))
+            entities.append(Torpedo(copy(self.position), copy(self.speed) + 40, copy(self.heading)))
 
 
 class Enemy(Sub):
@@ -197,7 +202,7 @@ class Trail(Entity):
 
 class Torpedo(Entity):
     def __init__(self, position, speed, heading, lifetime=7, fuse_length=1):
-        super().__init__(position, speed, heading, False)
+        super().__init__(position, speed, heading, thrust=3, is_explosive=False)
         self.lifetime = lifetime
         self.age = 0
         self.fuse_length = fuse_length
