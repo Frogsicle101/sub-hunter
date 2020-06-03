@@ -24,7 +24,7 @@ class MyGame(arcade.Window):
         self.CENTRE = (self.width // 2, self.height // 2)
 
         self.player = Player((self.CENTRE))
-        self.entities = [self.player, Enemy([200, 300]), Enemy([175, 350], 10, 270)]
+        self.entities = [self.player, Enemy([200, 300])]
 
     def on_draw(self):
         """ Render the screen. """
@@ -47,7 +47,7 @@ class MyGame(arcade.Window):
 
         #Draws informative text
         arcade.draw_text("Vessel Location:\nX: {:.2f}\nY: {:.2f}\nHeading: {}\nSpeed: {:.2f}\nSetting: {}"
-                .format(self.player.position[0] // 10, self.player.position[1] // 10,
+                .format(self.player.position[0] / 10, self.player.position[1] / 10,
                     self.player.heading, self.player.speed, self.player.get_pretty_speed()),
                 10 , self.height - 70, arcade.color.WHITE, 12)
 

@@ -10,6 +10,9 @@ from copy import copy
 
 from utilities import calculate_distance
 
+PATROL_RADIUS = 500
+
+
 class Entity:
         def __init__(self, position=[0, 0], speed=0, heading=360, acceleration=0, thrust=0, is_explosive=True):
             self.position = position
@@ -24,7 +27,6 @@ class Entity:
             self.drag_coefficent = 0.01
 
         def update(self, delta_time, entities):
-
             self.acceleration = (self.thrust / 10) - self.speed * self.drag_coefficent
 
             self.speed += self.acceleration
@@ -87,8 +89,16 @@ class Enemy(Sub):
         super().__init__(position, speed, heading)
         self.sprite = arcade.Sprite("bad_sub.png", 0.1)
         self.pinged = False
+        self.state = "patrol"
+        self.thrust = random.randint(1, 2)
+        self.target_heading = 360
+
         self.offset_x = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
         self.offset_y = random.randint(int(self.speed) - 40, 40 - int(self.speed)) * 3
+
+        self.pick_target()
+
+
 
     def draw(self, player):
         range = calculate_distance(tuple(self.position), tuple(player.position))
@@ -107,11 +117,39 @@ class Enemy(Sub):
                 self.sprite.draw()
             else:
                 x, y = screen_coords
-                arcade.draw_circle_filled(x + self.offset_x, y + self.offset_y, (40 - int(self.speed)) * 6, (255, 255, 255, int(self.speed )* 255 // 40 + 1), (41 - int(self.speed)))
+                arcade.draw_circle_filled(x + self.offset_x, y + self.offset_y, (40 - self.speed) * 6, (255, 255, 255, int(self.speed * 255 // 40 + 1)))
     def update(self, delta_time, entities):
+        if abs(self.heading - self.target_heading) < 5:
+            print("On target", end="")
+            self.change_angle = 0
+            target_x, target_y = self.target
+            pos_x, pos_y = self.position
+            self.target_heading = 180 + maths.degrees(maths.atan2(pos_x - target_x, pos_y - target_y))
+            self.heading = self.target_heading
+        elif self.heading > self.target_heading:
+            self.change_angle = -5
+        else:
+            self.change_angle = 5
+
         super().update(delta_time, entities)
-        angle = 180 + maths.degrees(maths.atan2(self.position[0] - entities[0].position[0], self.position[1] - entities[0].position[1]))
-        self.heading = angle if angle > 0 else angle + 360
+        if self.state == "patrol":
+            self.patrol(delta_time)
+    def patrol(self, delta_time):
+        distance = calculate_distance(self.position, self.target)
+        print(distance)
+        if distance < 10:
+            self.pick_target()
+    def pick_target(self):
+        x = random.randint(-PATROL_RADIUS, PATROL_RADIUS)
+        y = random.randint(-PATROL_RADIUS, PATROL_RADIUS)
+
+        self.target = [x, y]
+        print("NEW TARGET {}".format(self.target))
+        self.thrust = random.randint(1, 2)
+        target_x, target_y = self.target
+        pos_x, pos_y = self.position
+        self.target_heading = 180 + maths.degrees(maths.atan2(pos_x - target_x, pos_y - target_y))
+
 
 class Player(Sub):
     def __init__(self, centre_pos, position=[0, 0], speed=0, heading=360, trails = []):
